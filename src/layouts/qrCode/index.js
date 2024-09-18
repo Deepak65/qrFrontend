@@ -146,24 +146,46 @@ function QrCode() {
 //     link.download = `qrcode-${index}.png`;
 //     link.click();
 //   };
-const downloadQRCode = (url, index) => {
-    const canvas = document.createElement('canvas');
-    const qr = qrRefs.current[index];
-    const svg = qr.querySelector('svg');
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const img = new Image();
+// const downloadQRCode = (url, index) => {
+//     const canvas = document.createElement('canvas');
+//     const qr = qrRefs.current[index];
+//     const svg = qr.querySelector('svg');
+//     const svgData = new XMLSerializer().serializeToString(svg);
+//     const img = new Image();
     
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      canvas.toBlob((blob) => {
-        saveAs(blob, `qrcode-${index}.png`);
-      });
-    };
+//     img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+//     img.onload = () => {
+//       canvas.width = img.width;
+//       canvas.height = img.height;
+//       const ctx = canvas.getContext('2d');
+//       ctx.drawImage(img, 0, 0);
+//       canvas.toBlob((blob) => {
+//         saveAs(blob, `qrcode-${index}.png`);
+//       });
+//     };
+//   };
+const downloadQRCode = (url, index) => {
+  const scale = 4; // Increase scale factor for higher resolution
+  const canvas = document.createElement('canvas');
+  const svgElement = qrRefs.current[index]?.querySelector('svg');
+  const svgData = new XMLSerializer().serializeToString(svgElement);
+  
+  // Set canvas dimensions
+  const img = new Image();
+  img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+  img.onload = () => {
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0);
+    
+    // Convert canvas to Blob and save it
+    canvas.toBlob((blob) => {
+      saveAs(blob, `qrcode-${index}.png`);
+    }, 'image/png');
   };
+};
   const handleAddRow = () => {
     setData([...data, {
       url: 'https://qrcode-api.indicold.in/redirect/',
