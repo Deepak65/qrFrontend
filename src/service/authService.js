@@ -123,3 +123,32 @@ export const getFirmDetails = async (id) => {
     throw error.message;
   }
 };
+export const getFirmCount = async (id,date) => {
+  try {
+    // Make API call to your backend endpoint for login
+    const response = await fetch(`${BASE_URL}/count/${id}${date ? `?date=${date}` : ''}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.status == 404) {
+      throw new Error('Not_found')
+    }
+
+    if (!response.code === 200) {
+      // Handle non-200 responses here
+      throw new Error("password failed");
+    }
+
+    // Return the response data (might contain user information or tokens)
+    return response.json();
+  } catch (error) {
+    // Handle any errors, maybe log them or show an error message
+    console.error("password error:", error.message);
+    throw error.message;
+  }
+};

@@ -342,11 +342,17 @@
 // }
 
 // export default QrCode;
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState} from 'react';
 import QRCode from "react-qr-code";
+import { getFirmDetails,getFirmCount} from '../../../service/authService';
+import { useParams } from "react-router-dom";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import {  Tooltip } from '@mui/material';
+import MDBox from "components/MDBox";
+import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import { getFirmDetails } from '../../../service/authService';
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -357,21 +363,71 @@ import Paper from "@mui/material/Paper";
 import styled from "styled-components";
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Button, Modal, Form } from "react-bootstrap";
-import { useNavigate,useParams } from "react-router-dom";
-import Grid from "@mui/material/Grid";
-import Card from "@mui/material/Card";
-import MDBox from "components/MDBox";
-import MDTypography from "components/MDTypography";
-import {  Tooltip } from '@mui/material';
+import { useNavigate } from "react-router-dom";
 // Custom Styled Components
-const MainDiv = styled(MDBox)`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: linear-gradient(195deg, #49a3f1, #e8851a) !important;
-  padding: 20px;
-  border-radius: 8px;
+const CustomTableHead = styled(TableHead)`
+  display: contents !important;
 `;
+
+const CustomTableContainer = styled(TableContainer)`
+box-shadow: none !important;
+  &::-webkit-scrollbar {
+    width: 0px;
+    height:0px;
+    background: transparent; 
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #aaa; 
+  }
+  overflow-x: auto; 
+`;
+
+const CustomTableCellHeading = styled(TableCell)`
+white-space:nowrap;
+`
+const CustomTableCell = styled(TableCell)`
+color: #777777 !important;
+white-space:nowrap;
+`
+
+const MainDiv = styled(MDBox)`
+display: flex;
+flex-direction: column;
+align-items: center;
+background: linear-gradient(195deg, #49a3f1, #e8851a) !important;
+padding: 20px;
+`
+const MainSecondDiv = styled(MDBox)`
+display: flex;
+    justify-content: space-between;
+    background:linear-gradient(195deg, #49a3f1, #e8851a) !important; 
+`
+
+const AddButton = styled.button`
+border: none;
+    background: none;
+    color: white;
+`;
+const ModalDiv= styled.div`
+display: flex;
+    padding: var(--bs-modal-padding);
+`
+const CloseButton = styled.button`
+border: none;
+background: none;
+`;
+const SubmitButton = styled.button`
+border-radius: 8px;
+border:none;
+color:white;
+padding:8px;
+background:linear-gradient(195deg, #49a3f1, #e8851a)
+
+`;
+const CustomModal = styled(Modal)`
+z-index:99999;
+`
+
 
 const FirmDetailDiv = styled.div`
   display: flex;
@@ -392,6 +448,8 @@ const QRCodeContainer = styled.div`
 function ViewFirm() {
     const { id } = useParams();
     const [firmDetails, setFirmDetails] = useState(null);
+    const [firmCount, setFirmCount] = useState(null);
+    const [selectedDate, setSelectedDate] = useState('');
   
     useEffect(() => {
       async function fetchFirmDetails() {
@@ -403,8 +461,35 @@ function ViewFirm() {
         }
       }
       fetchFirmDetails();
-    }, []);
+      async function fetchFirmCount() {
+        try {
+          const response = await getFirmCount(id,selectedDate);
+          setFirmCount(response?.data);
+        } catch (error) {
+          console.error("Error fetching firm details:", error);
+        }
+      }
+      fetchFirmCount();
+    }, [selectedDate]);
+    const formatDateToDelhiTime = (dateString) => {
+      const date = new Date(dateString);
   
+      // Adjust for UTC+5:30 (Delhi time)
+      const utcOffset = 5.5 * 60 * 60 * 1000; // Offset in milliseconds
+      const localDate = new Date(date.getTime() + utcOffset);
+  
+      // Format the date to a readable string
+      const options = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      };
+  
+      return localDate.toLocaleString('en-IN', options).replace(',', ''); // Format for India
+    };
+    const handleDateChange = (e) => {
+      setSelectedDate(e.target.value);
+    };
     return (
       <DashboardLayout>
         <DashboardNavbar />
@@ -437,7 +522,70 @@ function ViewFirm() {
               <p>Loading...</p>
             )}
           </MDBox>
+          <br></br>
+          <div className="p-lg-4 p-3">
+          <MDBox pt={3} pb={3}>
+            
+         
+          <Grid container spacing={6} className="firm_details_table">
+            <Grid item xs={12} className="p-0">
+              <Card>
+                <MainSecondDiv
+                  mx={2}
+                  mt={-3}
+                  py={3}
+                  px={2}
+                  variant="gradient"
+                  borderRadius="lg"
+                  bgColor="info"
+                  coloredShadow="info"
+                >
+                  <MDTypography variant="h6" color="white">
+                    Qr Count
+                  </MDTypography>
+                  <div> <input
+              type="date"
+              value={selectedDate}
+              onChange={handleDateChange}
+              style={{ marginBottom: '20px',backgroundColor: 'transparent',
+              border: 'none' }}
+            /></div>
+                </MainSecondDiv>
+                <MDBox pt={3} ps={4}>
+                  <CustomTableContainer component={Paper} className="partner_detials_table">
+                    <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                      <CustomTableHead>
+                        <TableRow>
+                          <CustomTableCellHeading className="white-space">Date</CustomTableCellHeading>
+                          <CustomTableCellHeading className="white-space">Count</CustomTableCellHeading>
+                        </TableRow>
+                      </CustomTableHead>
+                      <TableBody>
+      {firmCount && firmCount?.length > 0 ? (
+        firmCount?.map((row, index) => (
+          <TableRow key={index} style={{ cursor: 'pointer' }}>
+            <CustomTableCell className="white-space">{formatDateToDelhiTime(row?.date)}</CustomTableCell>
+            <CustomTableCell className="white-space">{row?.count}</CustomTableCell>
+          </TableRow>
+        ))
+      ) : (
+        <TableRow>
+          <CustomTableCell colSpan={2} className="white-space" align="center">
+            No data found
+          </CustomTableCell>
+        </TableRow>
+      )}
+    </TableBody>
+                    </Table>
+                  </CustomTableContainer>
+                </MDBox>
+              </Card>
+            </Grid>
+          </Grid>
+        </MDBox>
         </div>
+          </div>
+          
       </DashboardLayout>
     );
   }
