@@ -1,0 +1,35 @@
+image: node:20.12.2
+
+stages:
+  - build
+  - test
+  - deploy
+
+cache:
+  paths:
+    - node_modules/
+
+before_script:
+  - npm install
+  - npm install @mui/base
+
+build:
+  stage: build
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - build/
+
+deploy:
+  stage: deploy
+  script:
+    - apt-get update -y
+    - apt-get install -y rsync openssh-client
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H 15.206.235.9 >> ~/.ssh/known_hosts
+    - rsync -avz --delete build/ ubuntu@15.206.235.9:/var/www/html/qr_frontend_indicold
+  only:
+    - dev
